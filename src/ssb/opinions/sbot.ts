@@ -34,6 +34,10 @@ const MultiServer = require('multiserver');
 const makeWSPlugin = require('multiserver/plugins/ws');
 const noAuthPlugin = require('multiserver/plugins/noauth');
 
+const makeBluetoothPlugin = require('./bluetooth/multiserv');
+const BluetoothManager = require('./bluetooth/bluetooth-manager');
+import { BluetoothConnector } from './bluetooth/bluetooth-connector';
+
 const needs = nest({
   'keys.sync.load': 'first',
   'sbot.obs.connectionStatus': 'first',
@@ -95,6 +99,13 @@ const create = (api: any) => {
   const connectedPeers = MutantSet();
   const localPeers = MutantSet();
 
+  const bluetoothManager = BluetoothManager();
+
+  // Bluetooth connector exposes only a subset of the functionality of the manager
+  // (necessarily functionality to list devices and connect, but not to start servers,
+  // etc)
+  let bluetoothConnector : BluetoothConnector = bluetoothManager;
+
   const rec = Reconnect((isConn: any) => {
     function notify(value?: any) {
       isConn(value);
@@ -103,12 +114,17 @@ const create = (api: any) => {
 
     const ms = MultiServer([
       [
+        makeBluetoothPlugin({
+          bluetoothManager: bluetoothManager
+        }),
         makeWSPlugin(),
         noAuthPlugin({
           keys: toSodiumKeys(keys),
         }),
       ],
     ]);
+
+    bluetoothManager.start((err: string, address: string) => ms.client(address));
 
     const address = [
       'ws:localhost:8422',
@@ -152,6 +168,7 @@ const create = (api: any) => {
 
   return {
     sbot: {
+      bluetoothConnector: bluetoothConnector,
       sync: {
         cache: () => cache,
       },
@@ -279,6 +296,7 @@ const create = (api: any) => {
         connectedPeers: () => connectedPeers,
         localPeers: () => localPeers,
       },
+      bluetoothManager: bluetoothManager
     },
   };
 
