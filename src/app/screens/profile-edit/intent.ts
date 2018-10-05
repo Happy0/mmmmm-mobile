@@ -1,5 +1,5 @@
 /**
- * MMMMM is a mobile app for Secure Scuttlebutt networks
+ * Manyverse is a mobile app for Secure Scuttlebutt networks
  *
  * Copyright (C) 2017 Andre 'Staltz' Medeiros
  *
@@ -29,6 +29,8 @@ export default function intent(
     changeName$: source.select('name').events('changeText'),
 
     changeDescription$: source.select('description').events('changeText'),
+
+    changeAvatar$: source.select('avatar').events('press'),
 
     save$: source.select('save').events('press'),
 

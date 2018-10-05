@@ -1,5 +1,5 @@
 /**
- * MMMMM is a mobile app for Secure Scuttlebutt networks
+ * Manyverse is a mobile app for Secure Scuttlebutt networks
  *
  * Copyright (C) 2017 Andre 'Staltz' Medeiros
  *
@@ -25,6 +25,7 @@ import {shortFeedId} from '../../../ssb/from-ssb';
 
 export type State = {
   selfFeedId: FeedId;
+  avatarUrl?: string;
   name?: string;
 };
 
@@ -41,7 +42,7 @@ export default function model(ssbSource: SSBSource): Stream<Reducer<State>> {
           if (about.name !== id && about.name !== shortFeedId(id)) {
             name = about.name;
           }
-          return {selfFeedId: id, name};
+          return {selfFeedId: id, name, avatarUrl: about.imageUrl};
         },
     );
 

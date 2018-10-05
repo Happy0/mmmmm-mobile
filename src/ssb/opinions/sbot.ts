@@ -1,5 +1,5 @@
 /**
- * MMMMM is a mobile app for Secure Scuttlebutt networks
+ * Manyverse is a mobile app for Secure Scuttlebutt networks
  *
  * Copyright (C) 2017 Andre 'Staltz' Medeiros
  *
@@ -30,8 +30,9 @@ const nest = require('depnest');
 const createFeed = require('ssb-feed');
 const ssbKeys = require('react-native-ssb-client-keys');
 const muxrpc = require('muxrpc');
+const nodejs = require('nodejs-mobile-react-native');
 const MultiServer = require('multiserver');
-const makeWSPlugin = require('multiserver/plugins/ws');
+const rnChannelPlugin = require('multiserver-rn-channel');
 const noAuthPlugin = require('multiserver/plugins/noauth');
 
 const needs = nest({
@@ -50,6 +51,8 @@ const gives = {
       progress: true,
       publish: true,
       acceptInvite: true,
+      acceptDhtInvite: true,
+      createDhtInvite: true,
       addBlob: true,
       gossipConnect: true,
       friendsGet: true,
@@ -66,6 +69,8 @@ const gives = {
       feed: true,
       links: true,
       backlinks: true,
+      hostingDhtInvites: true,
+      claimingDhtInvites: true,
       stream: true,
     },
     obs: {
@@ -103,17 +108,14 @@ const create = (api: any) => {
 
     const ms = MultiServer([
       [
-        makeWSPlugin(),
+        rnChannelPlugin(nodejs.channel),
         noAuthPlugin({
           keys: toSodiumKeys(keys),
         }),
       ],
     ]);
 
-    const address = [
-      'ws:localhost:8422',
-      'noauth:' + keys.public.replace('.ed25519', ''),
-    ].join('~');
+    const address = 'channel~noauth:' + keys.public.replace('.ed25519', '');
 
     ms.client(address, (err: any, stream: Readable<any>) => {
       if (err) {
@@ -213,6 +215,12 @@ const create = (api: any) => {
         acceptInvite: rec.async((invite: string, cb: any) => {
           sbot.invite.accept(invite, cb);
         }),
+        acceptDhtInvite: rec.async((invite: string, cb: any) => {
+          sbot.dhtInvite.accept(invite, cb);
+        }),
+        createDhtInvite: rec.async((cb: any) => {
+          sbot.dhtInvite.create(cb);
+        }),
         addBlob: rec.async((stream: any, cb: any) => {
           return pull(stream, sbot.blobs.add(cb));
         }),
@@ -264,6 +272,12 @@ const create = (api: any) => {
         }),
         links: rec.source((query: any) => {
           return sbot.links(query);
+        }),
+        hostingDhtInvites: rec.source(() => {
+          return sbot.dhtInvite.hostingInvites();
+        }),
+        claimingDhtInvites: rec.source(() => {
+          return sbot.dhtInvite.claimingInvites();
         }),
         stream: (fn: any) => {
           const stream = defer.source();

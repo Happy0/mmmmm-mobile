@@ -1,5 +1,5 @@
 /**
- * MMMMM is a mobile app for Secure Scuttlebutt networks
+ * Manyverse is a mobile app for Secure Scuttlebutt networks
  *
  * Copyright (C) 2017 Andre 'Staltz' Medeiros
  *
@@ -19,12 +19,14 @@
 
 import xs, {Stream} from 'xstream';
 import {h} from '@cycle/react';
-import {View, Text, TextInput, Image} from 'react-native';
+import {View, Text, TextInput, TouchableWithoutFeedback} from 'react-native';
 import Button from '../../components/Button';
 import {Palette} from '../../global-styles/palette';
+import {shortFeedId} from '../../../ssb/from-ssb';
 import {State} from './model';
-import {styles} from './styles';
+import {styles, avatarSize} from './styles';
 import {ReactElement} from 'react';
+import Avatar from '../../components/Avatar';
 
 export default function view(
   state$: Stream<State>,
@@ -32,8 +34,7 @@ export default function view(
 ) {
   return xs.combine(state$, topBarElem$).map(([state, topBarElem]) => {
     const defaultName =
-      !state.about.name ||
-      (state.about.name.length > 40 && state.about.name[0] === '@')
+      !state.about.name || state.about.name === shortFeedId(state.about.id)
         ? ''
         : state.about.name;
 
@@ -43,16 +44,21 @@ export default function view(
       h(View, {style: styles.cover}),
 
       h(
-        View,
-        {style: styles.avatarBackground},
+        TouchableWithoutFeedback,
+        {
+          sel: 'avatar',
+          accessible: true,
+          accessibilityLabel: 'Profile Picture',
+        },
         [
-          !!state.about.imageUrl
-            ? h(Image, {
-                style: styles.avatar,
-                source: {uri: state.about.imageUrl},
-              })
-            : null,
-        ] as Array<any>,
+          h(View, {style: styles.avatarTouchable}, [
+            h(Avatar, {
+              size: avatarSize,
+              url: state.about.imageUrl,
+              style: styles.avatar,
+            }),
+          ]),
+        ],
       ),
 
       h(Button, {

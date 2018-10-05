@@ -1,5 +1,5 @@
 /**
- * MMMMM is a mobile app for Secure Scuttlebutt networks
+ * Manyverse is a mobile app for Secure Scuttlebutt networks
  *
  * Copyright (C) 2017 Andre 'Staltz' Medeiros
  *
@@ -17,23 +17,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const fs = require('fs');
+import fs = require('fs');
 const path = require('path');
 const ssbKeys = require('ssb-keys');
 const mkdirp = require('mkdirp');
-const makeNoauthPlugin = require('multiserver/plugins/noauth');
-const makeWSPlugin = require('multiserver/plugins/ws');
+const DHT = require('multiserver-dht');
+const rnBridge = require('rn-bridge');
+const rnChannelPlugin = require('multiserver-rn-channel');
 import syncingPlugin = require('./plugins/syncing');
 import manifest = require('./manifest');
 
-// Hack until appDataDir plugin comes out
-const writablePath = path.join(__dirname, '..');
-const ssbPath = path.resolve(writablePath, '.ssb');
-
+const appDataDir = rnBridge.app.datadir();
+const ssbPath = path.resolve(appDataDir, '.ssb');
 if (!fs.existsSync(ssbPath)) {
   mkdirp.sync(ssbPath);
 }
-const keys = ssbKeys.loadOrCreateSync(path.join(ssbPath, '/secret'));
+const keysPath = path.join(ssbPath, '/secret');
+const keys = ssbKeys.loadOrCreateSync(keysPath);
+
+const bluetoothTransport = require('ssb-mobile-bluetooth')
 
 const config = require('ssb-config/inject')();
 config.path = ssbPath;
@@ -42,43 +44,41 @@ config.manifest = manifest;
 config.friends.hops = 2;
 config.connections = {
   incoming: {
-    net: [{scope: 'public', transform: 'shs'}],
-    ws: [{scope: 'private', transform: 'noauth'}],
+    net: [{scope: 'private', transform: 'shs', port: 8008}],
+    dht: [{scope: 'public', transform: 'shs', port: 8423}],
+    channel: [{scope: 'device', transform: 'noauth'}],
+    bluetooth: [{scope: 'public', transform: 'noauth'}]
   },
   outgoing: {
     net: [{transform: 'shs'}],
-    ws: [{transform: 'noauth'}],
+    dht: [{transform: 'shs'}],
+    bluetooth: [{scope: 'public', transform: 'noauth'}]
   },
 };
 
-function noauthTransform(stack: any, cfg: any) {
-  stack.multiserver.transform({
-    name: 'noauth',
-    create: () => {
-      return makeNoauthPlugin({
-        keys: {
-          publicKey: Buffer.from(cfg.keys.public, 'base64'),
-        },
-      });
-    },
+function rnChannelTransport(_sbot: any) {
+  _sbot.multiserver.transport({
+    name: 'channel',
+    create: () => rnChannelPlugin(rnBridge.channel),
   });
 }
 
-function wsTransport(stack: any) {
-  stack.multiserver.transport({
-    name: 'ws',
-    create: () => {
-      return makeWSPlugin({host: 'localhost', port: '8422'});
-    },
+function dhtTransport(_sbot: any) {
+
+  _sbot.multiserver.transport({
+    name: 'dht',
+    create: (dhtConfig: any) =>
+      DHT({keys: _sbot.dhtInvite.channels(), port: dhtConfig.port}),
   });
 }
 
-require('scuttlebot/index')
-  .use(wsTransport)
-  .use(noauthTransform)
-  .use(require('scuttlebot/plugins/plugins'))
+const sbot = require('scuttlebot/index')
+  .use(rnChannelTransport)
+  .use(require('ssb-dht-invite'))
+  .use(dhtTransport)
+  .use(bluetoothTransport)
   .use(require('scuttlebot/plugins/master'))
-  .use(require('scuttlebot/plugins/gossip'))
+  .use(require('@staltz/sbot-gossip'))
   .use(require('scuttlebot/plugins/replicate'))
   .use(syncingPlugin)
   .use(require('ssb-friends'))
@@ -92,6 +92,7 @@ require('scuttlebot/index')
   .use(require('ssb-threads'))
   .use(require('scuttlebot/plugins/invite'))
   .use(require('scuttlebot/plugins/local'))
-  .use(require('scuttlebot/plugins/logging'))
   .use(require('ssb-ebt'))
   .call(null, config);
+
+sbot.dhtInvite.start();

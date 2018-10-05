@@ -1,5 +1,5 @@
 /**
- * MMMMM is a mobile app for Secure Scuttlebutt networks
+ * Manyverse is a mobile app for Secure Scuttlebutt networks
  *
  * Copyright (C) 2017 Andre 'Staltz' Medeiros
  *
@@ -21,10 +21,10 @@ import {PureComponent} from 'react';
 import {
   View,
   Text,
-  Image,
-  TouchableNativeFeedback,
   StyleSheet,
   TouchableOpacity,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import {h} from '@cycle/react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -32,6 +32,7 @@ import {Palette} from '../global-styles/palette';
 import {Dimensions} from '../global-styles/dimens';
 import {Typography} from '../global-styles/typography';
 import {PeerMetadata, FeedId} from 'ssb-typescript';
+import Avatar from './Avatar';
 
 export const styles = StyleSheet.create({
   container: {
@@ -49,21 +50,8 @@ export const styles = StyleSheet.create({
     marginBottom: 1,
   },
 
-  peerAvatarContainer: {
-    height: Dimensions.avatarSizeNormal,
-    width: Dimensions.avatarSizeNormal,
-    borderRadius: Dimensions.avatarBorderRadius,
-    backgroundColor: Palette.indigo1,
-    marginRight: Dimensions.horizontalSpaceSmall,
-  },
-
   peerAvatar: {
-    borderRadius: Dimensions.avatarBorderRadius,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    marginRight: Dimensions.horizontalSpaceSmall,
   },
 
   peerDetails: {
@@ -95,12 +83,14 @@ export const styles = StyleSheet.create({
 
 function peerModeIcon(source: PeerMetadata['source']): string {
   if (source === 'local') return 'wifi';
+  if ((source as any) === 'dht') return 'account-network';
   if (source === 'pub') return 'server-network';
   return 'server-network';
 }
 
 function peerModeTitle(source: PeerMetadata['source']): string {
   if (source === 'local') return 'Local network';
+  if ((source as any) === 'dht') return 'Internet P2P';
   if (source === 'pub') return 'Internet server';
   return 'Internet server';
 }
@@ -108,19 +98,17 @@ function peerModeTitle(source: PeerMetadata['source']): string {
 export type Props = {
   peers: Array<PeerMetadata>;
   onPressPeer?: (id: FeedId) => void;
+  style?: StyleProp<ViewStyle>;
 };
 
 export default class ConnectionsList extends PureComponent<Props> {
   private renderItem(peer: PeerMetadata) {
-    const onPressPeer = () => {
-      if (this.props.onPressPeer) {
-        this.props.onPressPeer(peer.key);
-      }
-    };
-
     const touchableProps = {
-      background: TouchableNativeFeedback.SelectableBackground(),
-      onPress: onPressPeer,
+      onPress: () => {
+        if (this.props.onPressPeer) {
+          this.props.onPressPeer(peer.key);
+        }
+      },
     };
 
     const peerName = h(TouchableOpacity, touchableProps, [
@@ -145,13 +133,12 @@ export default class ConnectionsList extends PureComponent<Props> {
     ]);
 
     return h(View, {style: styles.peer}, [
-      h(TouchableNativeFeedback, touchableProps, [
-        h(View, {style: styles.peerAvatarContainer}, [
-          h(Image, {
-            style: styles.peerAvatar,
-            source: {uri: peer['imageUrl' as any] || undefined},
-          }),
-        ]),
+      h(TouchableOpacity, touchableProps, [
+        h(Avatar, {
+          size: Dimensions.avatarSizeNormal,
+          url: peer['imageUrl' as any],
+          style: styles.peerAvatar,
+        }),
       ]),
       h(View, {style: styles.peerDetails}, [peerName, peerMode]),
     ]);
@@ -160,7 +147,7 @@ export default class ConnectionsList extends PureComponent<Props> {
   public render() {
     return h(
       View,
-      {style: styles.container},
+      {style: [styles.container, this.props.style]},
       this.props.peers.map(peer => this.renderItem(peer)),
     );
   }

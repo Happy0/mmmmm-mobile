@@ -1,5 +1,5 @@
 /**
- * MMMMM is a mobile app for Secure Scuttlebutt networks
+ * Manyverse is a mobile app for Secure Scuttlebutt networks
  *
  * Copyright (C) 2017 Andre 'Staltz' Medeiros
  *
@@ -22,7 +22,7 @@ import {Palette} from '../../global-styles/palette';
 import {Dimensions} from '../../global-styles/dimens';
 import {Typography} from '../../global-styles/typography';
 
-const avatarSize = Dimensions.avatarSizeBig;
+export const avatarSize = Dimensions.avatarSizeBig;
 const avatarSizeHalf = avatarSize * 0.5;
 
 export const styles = StyleSheet.create({
@@ -49,23 +49,16 @@ export const styles = StyleSheet.create({
     backgroundColor: Palette.brand.textBackground,
   },
 
-  avatarBackground: {
-    height: avatarSize,
-    width: avatarSize,
-    borderRadius: Dimensions.avatarBorderRadius,
+  avatarTouchable: {
     top: -avatarSizeHalf,
     left: Dimensions.horizontalSpaceBig,
-    zIndex: 20,
-    backgroundColor: Palette.indigo1,
+    width: avatarSize,
+    height: avatarSize,
+    zIndex: 19,
   },
 
   avatar: {
-    position: 'absolute',
-    borderRadius: Dimensions.avatarBorderRadius,
-    top: 0,
-    left: 0,
-    bottom: 0,
-    right: 0,
+    zIndex: 20,
   },
 
   label: {
@@ -81,7 +74,10 @@ export const styles = StyleSheet.create({
 
   save: {
     position: 'absolute',
-    top: avatarSizeHalf + Dimensions.verticalSpaceSmall,
+    top:
+      Dimensions.toolbarAndroidHeight +
+      avatarSizeHalf +
+      Dimensions.verticalSpaceSmall,
     right: Dimensions.horizontalSpaceBig,
     zIndex: 30,
   },

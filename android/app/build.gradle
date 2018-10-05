@@ -105,12 +105,16 @@ android {
        targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    lintOptions {
+        abortOnError false
+    }
+
     defaultConfig {
-        applicationId "com.mmmmm"
-        minSdkVersion 19
-        targetSdkVersion 23
-        versionCode 22
-        versionName "0.0.18-alpha"
+        versionCode 30
+        versionName "0.18.10-02.beta"
+        applicationId "se.manyver"
+        minSdkVersion 21
+        targetSdkVersion 26
         missingDimensionStrategy "RNN.reactNativeVersion", "reactNative55"
         ndk {
             abiFilters "armeabi-v7a" // , "x86"
@@ -129,6 +133,8 @@ android {
                 keyPassword MYAPP_RELEASE_KEY_PASSWORD
             }
         }
+
+
     }
 
     splits {
@@ -164,6 +170,7 @@ android {
 }
 
 dependencies {
+    implementation project(':react-native-bluetooth-serial')
     implementation "ch.acra:acra-core:5.0.0"
     implementation "ch.acra:acra-mail:5.0.0"
     implementation "ch.acra:acra-dialog:5.0.0"

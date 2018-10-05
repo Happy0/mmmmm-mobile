@@ -1,5 +1,5 @@
 /**
- * MMMMM is a mobile app for Secure Scuttlebutt networks
+ * Manyverse is a mobile app for Secure Scuttlebutt networks
  *
  * Copyright (C) 2017 Andre 'Staltz' Medeiros
  *
@@ -51,6 +51,13 @@ export const styles = StyleSheet.create({
     fontSize: Typography.fontSizeSmall,
     fontFamily: Typography.fontFamilyReadableText,
     color: Palette.brand.textWeak,
+  },
+
+  likesHidden: {
+    marginTop: Dimensions.verticalSpaceSmall,
+    fontSize: Typography.fontSizeSmall,
+    fontFamily: Typography.fontFamilyReadableText,
+    color: Palette.brand.textBackground,
   },
 
   likeButton: {
@@ -203,24 +210,20 @@ export default class MessageFooter extends Component<Props, State> {
   public render() {
     const {likeCount, ilike} = this.state;
 
-    const counters = likeCount
-      ? [
-          h(View, {style: styles.row}, [
-            h(
-              Text,
-              {
-                style: styles.likes,
-                accessible: true,
-                accessibilityLabel: 'Like Count',
-              },
-              [
-                h(Text, {style: styles.likeCount}, String(likeCount)),
-                (likeCount === 1 ? ' like' : ' likes') as any,
-              ],
-            ),
-          ]),
-        ]
-      : [];
+    const counter = h(View, {style: styles.row}, [
+      h(
+        Text,
+        {
+          style: likeCount ? styles.likes : styles.likesHidden,
+          accessible: true,
+          accessibilityLabel: 'Like Count',
+        },
+        [
+          h(Text, {style: styles.likeCount}, String(likeCount)),
+          (likeCount === 1 ? ' like' : ' likes') as any,
+        ],
+      ),
+    ]);
 
     const buttons = [
       h(TouchableNativeFeedback, this._likeButtonProps, [
@@ -243,7 +246,7 @@ export default class MessageFooter extends Component<Props, State> {
     }
 
     return h(View, {style: styles.col}, [
-      ...counters,
+      counter,
       h(View, {style: styles.row}, buttons),
     ]);
   }
